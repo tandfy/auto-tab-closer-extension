@@ -1,0 +1,18 @@
+{
+  "name": "tab manager",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "worker.js"
+  },
+  "permissions": ["storage", "alarms"],
+  "commands": {
+    "pin-tab": {
+      "suggested_key": { "default": "Ctrl+E", "mac": "Command+E" },
+      "description": "Pin the current tab"
+    }
+  }
+}
