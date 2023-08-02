@@ -1,5 +1,5 @@
 {
-  "name": "tab manager",
+  "name": "auto tab closer",
   "version": "1.0",
   "manifest_version": 3,
   "action": {

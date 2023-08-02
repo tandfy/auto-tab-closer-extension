@@ -1,1 +1,1 @@
-# tab-manager
+# Auto Tab Closer
