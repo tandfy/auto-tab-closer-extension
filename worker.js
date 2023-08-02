@@ -45,7 +45,6 @@ chrome.alarms.onAlarm.addListener(async () => {
 
   let { timeToCloseTabs } = await chrome.storage.local.get("timeToCloseTabs");
   if (timeToCloseTabs === undefined) timeToCloseTabs = 60;
-  console.log({ timeToCloseTabs });
 
   for (const tabId of Object.keys(tabsTimes)) {
     // 1時間経過してたらタブを閉じる
@@ -53,6 +52,8 @@ chrome.alarms.onAlarm.addListener(async () => {
       try {
         await chrome.tabs.remove(parseInt(tabId));
       } catch (e) {
+        // NOTE: タブがすでに閉じられている場合などでエラーになる
+        // エラーになっても特に問題ないのでログに出すだけにしておく
         console.error(e);
       }
       delete tabsTimes[tabId];
