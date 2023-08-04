@@ -44,7 +44,7 @@ chrome.alarms.onAlarm.addListener(async () => {
   }
 
   let { timeToCloseTabs } = await chrome.storage.local.get("timeToCloseTabs");
-  if (timeToCloseTabs === undefined) timeToCloseTabs = 60;
+  if (!timeToCloseTabs) timeToCloseTabs = 60;
 
   for (const tabId of Object.keys(tabsTimes)) {
     // 1時間経過してたらタブを閉じる
