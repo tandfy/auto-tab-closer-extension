@@ -6,7 +6,8 @@
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "worker.js"
+    "service_worker": "worker.js",
+    "type": "module"
   },
   "permissions": ["storage", "alarms"],
   "commands": {

@@ -1,14 +1,12 @@
+import { getMinutesToCloseTab, saveMinutesToCloseTab } from "./storage.js";
 window.addEventListener("DOMContentLoaded", async () => {
-  const { timeToCloseTabs } = await chrome.storage.local.get("timeToCloseTabs");
-  if (timeToCloseTabs) {
-    document.getElementById("timeToCloseTabs").value = timeToCloseTabs;
-  }
+  const minutesToCloseTab = await getMinutesToCloseTab();
+  document.getElementById("minutesToCloseTab").value = minutesToCloseTab;
 });
 
 document.getElementById("saveButton").addEventListener("click", async () => {
-  const inputValue = document.getElementById("timeToCloseTabs").value;
-  await chrome.storage.local.set({ timeToCloseTabs: inputValue });
-  console.log(inputValue);
+  const inputValue = document.getElementById("minutesToCloseTab").value;
+  await saveMinutesToCloseTab(inputValue);
   const savedText = document.getElementById("savedText");
   savedText.style.display = "block";
   setTimeout(() => {

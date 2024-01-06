@@ -1,18 +1,16 @@
-const setTabsTimes = async (tabsTimes) => {
-  await chrome.storage.local.set({ tabsTimes });
-};
-const getTabsTimes = async () => {
-  const { tabsTimes } = await chrome.storage.local.get("tabsTimes");
-  return tabsTimes;
-};
+import {
+  getMinutesToCloseTab,
+  saveLatestActiveTimesForTabs,
+  getLatestActiveTimesForTabs,
+} from "./storage.js";
 
 const initialize = async () => {
-  const tabsTimes = {};
+  const latestActiveTimesForTabs = {};
   const tabs = await chrome.tabs.query({});
   tabs.forEach((tab) => {
-    tabsTimes[tab.id] = new Date().getTime();
+    latestActiveTimesForTabs[tab.id] = new Date().getTime();
   });
-  await chrome.storage.local.set({ tabsTimes });
+  saveLatestActiveTimesForTabs(latestActiveTimesForTabs);
 };
 
 chrome.runtime.onStartup.addListener(initialize);
@@ -22,45 +20,44 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const { tabId } = activeInfo;
   if (!tabId) return;
 
-  const tabsTimes = await getTabsTimes();
+  const latestActiveTimesForTabs = await getLatestActiveTimesForTabs();
 
-  tabsTimes[tabId] = new Date().getTime();
+  latestActiveTimesForTabs[tabId] = new Date().getTime();
 
-  await setTabsTimes(tabsTimes);
+  await saveLatestActiveTimesForTabs(latestActiveTimesForTabs);
+});
+
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  const latestActiveTimesForTabs = await getLatestActiveTimesForTabs();
+  delete latestActiveTimesForTabs[tabId];
+  await saveLatestActiveTimesForTabs(latestActiveTimesForTabs);
 });
 
 chrome.alarms.create({ periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener(async () => {
-  const date = new Date();
-  const tabsTimes = await getTabsTimes();
-  const pinnedTabs = await chrome.tabs.query({ pinned: true });
-  for (const pinnedTab of pinnedTabs) {
-    delete tabsTimes[pinnedTab.id];
-  }
+  const latestActiveTimesForTabs = await getLatestActiveTimesForTabs();
+  const tabs = await chrome.tabs.query({});
+  const minutesToCloseTab = await getMinutesToCloseTab();
+  const now = new Date();
+  for (const tab of tabs) {
+    if (tab.active || tab.pinned) continue;
 
-  const activeTabs = await chrome.tabs.query({ active: true });
-  for (const activeTab of activeTabs) {
-    delete tabsTimes[activeTab.id];
-  }
-
-  let { timeToCloseTabs } = await chrome.storage.local.get("timeToCloseTabs");
-  if (!timeToCloseTabs) timeToCloseTabs = 60;
-
-  for (const tabId of Object.keys(tabsTimes)) {
-    // 1時間経過してたらタブを閉じる
-    if (date.getTime() - tabsTimes[tabId] > timeToCloseTabs * 60 * 1000) {
+    // 指定時間経過していたらタブを閉じる
+    if (
+      now.getTime() - latestActiveTimesForTabs[tab.id] >
+      minutesToCloseTab * 60 * 1000
+    ) {
       try {
-        await chrome.tabs.remove(parseInt(tabId));
+        await chrome.tabs.remove(tab.id);
       } catch (e) {
         // NOTE: タブがすでに閉じられている場合などでエラーになる
         // エラーになっても特に問題ないのでログに出すだけにしておく
         console.error(e);
       }
-      delete tabsTimes[tabId];
     }
   }
 
-  await setTabsTimes(tabsTimes);
+  await saveLatestActiveTimesForTabs(latestActiveTimesForTabs);
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
